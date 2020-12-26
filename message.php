@@ -1,0 +1,59 @@
+<?php 
+
+//প্রথমে আপনার সুবিধে মত করে ডেটাবেজ হতে ডেটা নিন এখানে mysqli ব্যবহার করে mysql/mariadb ডেটাবেজ হতে ডেটা নিয়ে দেখানো হলো তবে চাইলে লুপের মধ্যে সেন্ড এর কোড দিয়ে একাধিক অথবা ডাইনামিক ভাবেও এসএমএস প্রেরন করা যাবে । তবে এভাবে ডাইনামিক প্রেরন না করে many to many পদ্ধতি ব্যবহার করুন যা এর পরবর্তি মেনুতে দেখানো হয়েছে । এটি স্ট্যাটিক এসএমএস এর জন্য বেস্ট যেমন আপনার ডেটাবেজে ১০০ নাম্বার আছে তাদের সবাইকে একটি সেম ম্যাসেজ (নোটিশ, মার্কেটিং ইত্যাদি) দিতে চান এক্ষেত্রে ডেটাবেজ থেকে আপনি সব নাম্বার একবারে নিয়ে কমা সেপারেট ফরম্যাটে সাজিয়ে একটি রিকোয়েস্টের মাধ্যমে সব এসএমএস প্রেরন করা যাবে ।
+
+        $servername = "localhost";
+           $username = "root";
+          $password = "";
+         $dbname = "bms";
+
+        $conn= new mysqli($servername, $username, $password,$dbname);
+         $error="";
+         if ($conn->connect_error) {
+         die("Connection failed: " . $conn->connect_error);
+           } 
+
+$phoneno = $_SESSION['phone_no'];
+$sqlquery = "SELECT phone_no FROM customer_account where phone_no='$phoneno'";
+if ($result = mysqli_query($conn, $sqlquery)) {
+    /* fetch associative array */
+    while ($row = mysqli_fetch_assoc($result)) {
+	$number = "0".$row["phone_no"];
+	$to = "$number";
+    }
+} 
+
+$accountno =$_SESSION['account_no'];
+
+$acc_search="select otp from customer_fund where account_no='$accountno'";
+$found=mysqli_query($conn,$acc_search);
+while($res= mysqli_fetch_array($found)){
+	$code=$res['otp'];
+}
+
+// আমরা $to তে সব নাম্বার কমা সেপারেট করা অবস্থায় পেয়েছি এবার এসএমএস প্রেরন করুন
+$token = "230b56d16c67b5eea4fd941306c87ff1";
+$message = "Banking Management System Your otp is:$code";
+
+$url = "http://api.greenweb.com.bd/api2.php";
+
+
+$data= array(
+'to'=>"$to",
+'message'=>"$message",
+'token'=>"$token"
+); // Add parameters in key value
+$ch = curl_init(); // Initialize cURL
+curl_setopt($ch, CURLOPT_URL,$url);
+curl_setopt($ch, CURLOPT_ENCODING, '');
+curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$smsresult = curl_exec($ch);
+
+//Result
+echo $smsresult;
+
+//Error Display
+echo curl_error($ch);
+
+?>
